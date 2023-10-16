@@ -1,9 +1,12 @@
-#include <stdio.h>
+﻿#include "jjuggumi.h"
+#include "canvas.h"
+#include "keyin.h"
 #include <stdlib.h>
 #include <time.h>
 #include <Windows.h>
 #include <conio.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 typedef struct _point
 {
@@ -13,100 +16,115 @@ typedef enum _direction
 {
 	IDLE = 1, LEFT, UP, DOWN, RIGHT
 }direction;
-typedef enum _state { alive, dead, finished }state;
+typedef enum _state { alive, dead, finished }state;		// 각 플레이어들의 상태를 나타내는 자료형
 typedef struct _tickState
 {
-	double goalTick;
-	double cntTick;
-}tickState;
-void gotoxy(int row, int col);
-void draw(void);
-bool moveOn(point*, direction);	
-double getTick();
-int SayFlower();	
-void killPlayer();
-void playerDialog(void);
-char map[9][40], front[9][40];
-bool running = true;
-state states[5] = { alive, };
-state fStates[5] = { -1,-1,-1,-1,-1 };
-int main() {
+	double goalTick;	// 트리거틱
+	double cntTick;		// 현재 틱
+}tickState;		// 이벤트를 발생시키는 주기를 조절하기 위한 자료형
+
+bool moveOn(point*, direction);	// 플레이어 이동
+double getTick();		// Tick계산
+int SayFlower();		// 무궁화꽃이피었습니다.  출력
+void checkFinished();	// 플레이어가 골인지점에 도착하면 finised 처리
+void killPlayer();		// 영희가 뒤돌아봤을 때 플레이어가 움직이면 dead 처리
+
+bool running = true;	// 게임 반복문 실행 여부
+point* pl;				// 플레이어 위치들
+tickState* plTicks;		// 플레이어 이동 주기
+state* states;			// 플레이어 상태 (alive, dead, finished)
+int taggerY;			// 영희 세로 위치
+
+
+void mugunghwa() {
 	srand((unsigned int)time(NULL));
-	//�� ����
-	for (int i = 0; i < 9; i++) {
-		for (int j = 0; j < 40; j++) {
-			if (i == 0 || i == 8 || j == 0 || j == 39)	// �� ����
-				map[i][j] = '*';
-			else
-				map[i][j] = ' ';
-		}
+
+	////////////////////  게임 초기화  ////////////////////////////////////////////////////////////////////////////////
+	system("cls");
+	if (5 < n_player) {
+		map_init(4 + n_player, 40);
+	}
+	else {
+		map_init(9, 40);
 	}
 
-	//���� ����
-	map[3][1] = '#';
-	map[4][1] = '#';
-	map[5][1] = '#';
+	// 영희 생성
+	taggerY = N_ROW / 2;
+	back_buf[taggerY-1] [1] = '#';
+	back_buf[taggerY][1] = '#';
+	back_buf[taggerY+1][1] = '#';
+	tickState taggerSaying = { 100,0 };	// 영희가 말하고 있는 시간 설정
+	tickState taggerWatching = { 3000,0 }; // 영희가 바라보고 있는 시간 설정
+	bool isWatching = false;		// 영희는 처음에 앞을 보고 있다
 
-	// ������ ��ġ �ʱ�ȭ
-	point pl[5] = { {38,2}, {38,3},{38,4},{38,5},{38,6} };
-
-	tickState plTicks[5] = { {0,0}, {200,0}, {400,0}, {600,0}, {800,0}, };
-	tickState taggerSaying = { 100,0 };	// ����
-	tickState taggerWatching = { 3000,0 }; // d����
-	bool isWatching = false;
-
-	map[pl[0].y][pl[0].x] = '0';
-	map[pl[1].y][pl[1].x] = '1';
-	map[pl[2].y][pl[2].x] = '2';
-	map[pl[3].y][pl[3].x] = '3';
-	map[pl[4].y][pl[4].x] = '4';
-
-	while (running) {
-		draw();
-		playerDialog();
-		//�÷��̾� ����
-		if (_kbhit() && plTicks[0].goalTick <= plTicks[0].cntTick)
+	// 플레이어 위치 및 이동주기 및 상태 설정
+	pl = (point*)malloc(sizeof(point) * n_player);
+	plTicks = (tickState*)malloc(sizeof(tickState) * n_player);
+	states = (state*)malloc(sizeof(state)*n_player);
+	for (int i = 0; i < n_player; i++) 
+	{
+		// 플레이어들 위치 설정
+		pl[i].x = 38;
+		pl[i].y = 2+i;
+		back_buf[pl[i].y][pl[i].x] = '0' + i;
+		
+		// 플레이어들 이동 주기 설정
+		if (i == 0)
 		{
+			plTicks[0].goalTick = 0;
 			plTicks[0].cntTick = 0;
-			int key = _getch();
-			switch (key)
-			{
-			case 'w':
-				if (states[0] == alive)
-					moveOn(pl, UP);
-				break;
-
-			case 's':
-				if (states[0] == alive)
-					moveOn(pl, DOWN);
-				break;
-
-			case 'a':
-				if (states[0] == alive)
-					moveOn(pl, LEFT);
-				break;
-
-			case 'd':
-				if (states[0] == alive)
-					moveOn(pl, RIGHT);
-				break;
-
-			case 'q':
-				running = false;
-				break;
-			}
-			if ((pl[0].x == 1) || (pl[0].x == 2 && 3 <= pl[0].y && pl[0].y <= 5))
-				states[0] = finished;
-		}
-		//ai������
-		for (int i = 1; i < 5; i++)
+		} 
+		else
 		{
+			plTicks[i].goalTick = randint(100, 800); //ai 움직임 속도
+			plTicks[i].cntTick = 0;
+		}
+
+		// 플레이어 상태 설정
+		states[i] = alive;
+	}
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	// 게임 진행 루프문
+	while (running) {
+		display();
+		//사용자 입력 처리
+		{
+			key_t key = get_key();
+			if (key != K_UNDEFINED)
+			{
+				if (key == K_QUIT)
+					running = false;
+				else if (states[0] == alive && plTicks[0].goalTick <= plTicks[0].cntTick)
+					switch (key)
+					{
+					case K_LEFT:
+						moveOn(pl + 0, LEFT);
+						break;
+					case K_UP:
+						moveOn(pl + 0, UP);
+						break;
+					case K_DOWN:
+						moveOn(pl + 0, DOWN);
+						break;
+					case K_RIGHT:
+						moveOn(pl + 0, RIGHT);
+						break;
+					}
+			}
+
+		}
+		// AI 이동 처리
+		for (int i = 1; i < n_player; i++)
+		{
+			// 캐릭터가 살아있는 상태고, 현재 틱이 이벤트 발생 틱을 넘어서면...
 			if (states[i] == alive && plTicks[i].goalTick <= plTicks[i].cntTick)
 			{
 				plTicks[i].cntTick = 0;
-				if (isWatching == false || (rand() % 10 == 0))	// ���� �����ʰų�, �����ִ���� 10%�� Ȯ���� ����
+				if (isWatching == false || (rand() % 10 == 0))	// 영희가 바라보면 10의 1확률로 움직인다. 현재 10%
 				{
-					int random = rand() % 10;
+					int random = rand() % 10;	
 					if (random == 0)
 						moveOn(pl + i, IDLE);
 					else if (random == 1)
@@ -115,35 +133,31 @@ int main() {
 						moveOn(pl + i, DOWN);
 					else
 					{
-					}
 						moveOn(pl + i, LEFT);
-
-					if ((pl[i].x == 1) || (pl[i].x == 2 && 3 <= pl[i].y && pl[i].y <= 5))
-						states[i] = finished;
+					}
 				}
 			}
 
 
 		}
+	
 
-		// ����ȭ���� �Ǿ����ϴ� ���
+		// 영희 말하기&뒤돌아보기 구현
 		if (isWatching)
 		{
 			if (taggerWatching.goalTick <= taggerWatching.cntTick)
 			{
 				isWatching = false;
 				taggerWatching.cntTick = 0;
-				map[3][1] = '#';
-				map[4][1] = '#';
-				map[5][1] = '#';
-				gotoxy(10, 0);
-				printf("                                                               ");
+				back_buf[N_ROW / 2 - 1][1] = '#';
+				back_buf[N_ROW / 2][1] = '#';
+				back_buf[N_ROW / 2 + 1][1] = '#';
 			}
 			else
 			{
-				map[3][1] = '@';
-				map[4][1] = '@';
-				map[5][1] = '@';
+				back_buf[N_ROW / 2 - 1][1] = '@';
+				back_buf[N_ROW / 2][1] = '@';
+				back_buf[N_ROW / 2 + 1][1] = '@';
 				killPlayer();
 			}
 		}
@@ -170,31 +184,33 @@ int main() {
 
 		}
 
-		//tick ���
+		// 플레이어 도착 여부 확인
+		checkFinished();
+
+		// 각 플레이어들의 tick 증가
 		double tick = getTick();
-		for (int i = 0; i < 5; i++) plTicks[i].cntTick += tick;
+		for (int i = 0; i < n_player; i++) plTicks[i].cntTick += tick;
 		taggerSaying.cntTick += tick;
 		if (isWatching) taggerWatching.cntTick += tick;
 
-		int leftPlayer = 0;
-		int deadPlayer = 0;
-		for (int i = 0; i < 5; i++)
-			if (states[i] == alive)
-				leftPlayer++;
-			else if (states[i] == dead)
-				deadPlayer++;
-		if (leftPlayer <= 1)
-			if (leftPlayer == 1 && deadPlayer == 4)
-				running = false;
-			else if (leftPlayer == 0)
-				running = false;
 
 
+		// 게임 종료 조건 여부 확인
+		int finishedN = 0;
+		for (int i = 0; i < n_player; i++)
+			if (states[i] == finished)
+				finishedN++;
+		if (finishedN == n_alive)	// 클리어한 사람 수와 살아있는 플레이어 수가 같으면 게임 종료
+			running = false;
+		else if (n_alive <= 1 && finishedN == 0) // 아무도 클리어하지 못했고, 플레이어 수가 1명 이하면 게임 종료
+			running = false;
+		else if (finishedN == n_player)	// 다 도착했을 경우, 게임 종료
+			running = false;
+
+		
 	}
-	draw();
-	playerDialog();
-	gotoxy(20, 0);
-	return 0;
+	display();
+	gotoxy(ROW_MAX+3, 0);
 }
 
 
@@ -205,39 +221,41 @@ bool moveOn(point* pt, direction dir)
 	switch (dir)
 	{
 	case LEFT:
-		if (map[pt->y][pt->x - 1] != ' ')
+		if (back_buf[pt->y][pt->x - 1] != ' ')
 			return false;
-		map[pt->y][pt->x - 1] = map[pt->y][pt->x];
-		map[pt->y][pt->x] = ' ';
+		back_buf[pt->y][pt->x - 1] = back_buf[pt->y][pt->x];
+		back_buf[pt->y][pt->x] = ' ';
 		pt->x -= 1;
 		break;
 
 	case UP:
-		if (map[pt->y - 1][pt->x] != ' ')
+		if (back_buf[pt->y - 1][pt->x] != ' ')
 			return false;
-		map[pt->y - 1][pt->x] = map[pt->y][pt->x];
-		map[pt->y][pt->x] = ' ';
+		back_buf[pt->y - 1][pt->x] = back_buf[pt->y][pt->x];
+		back_buf[pt->y][pt->x] = ' ';
 		pt->y -= 1;
 		break;
 
 	case DOWN:
-		if (map[pt->y + 1][pt->x] != ' ')
+		if (back_buf[pt->y + 1][pt->x] != ' ')
 			return false;
-		map[pt->y + 1][pt->x] = map[pt->y][pt->x];
-		map[pt->y][pt->x] = ' ';
+		back_buf[pt->y + 1][pt->x] = back_buf[pt->y][pt->x];
+		back_buf[pt->y][pt->x] = ' ';
 		pt->y += 1;
 		break;
 
 	case RIGHT:
-		if (map[pt->y][pt->x + 1] != ' ')
+		if (back_buf[pt->y][pt->x + 1] != ' ')
 			return false;
-		map[pt->y][pt->x + 1] = map[pt->y][pt->x];
-		map[pt->y][pt->x] = ' ';
+		back_buf[pt->y][pt->x + 1] = back_buf[pt->y][pt->x];
+		back_buf[pt->y][pt->x] = ' ';
 		pt->x += 1;
 		break;
 	}
 	return true;
 }
+
+
 double getTick()
 {
 	static double beforeClock = 0;
@@ -246,13 +264,19 @@ double getTick()
 	return clock() - temp;
 
 }
+
 int SayFlower()
 {
 	static int cnt = 0;
-	const char* sentence = "����ȭ�����Ǿ����ϴ�";
+	const char* sentence = "무궁화꽃이피었습니다";
+	if (cnt == 0)	// 무궁화꽃이피었습니다 출력한 거 지우기
+	{
+		gotoxy(N_ROW + 1, 0);
+		printf("                                                               ");
+	}
 	while (cnt < strlen(sentence))
 	{
-		gotoxy(10, cnt);
+		gotoxy(N_ROW + 1, cnt);
 		printf("%c%c", sentence[cnt], sentence[cnt + 1]);
 		cnt += 2;
 		return cnt;
@@ -260,66 +284,39 @@ int SayFlower()
 	cnt = 0;
 	return cnt;
 }
-void playerDialog() {
-	static int fplayerCnt = 0;
-	int playerCnt = 5;
-	for (int i = 0; i < 5; i++)
-		if (states[i] == dead)
-			playerCnt--;
 
-	if (fplayerCnt != playerCnt)
-	{
-		gotoxy(14, 0);
-		fplayerCnt = playerCnt;
-		printf("no. of players left: %d\n", playerCnt);
-	}
-	for (int i = 0; i < 5; i++)
-	{
-		if (fStates[i] != states[i])
+void checkFinished()
+{
+	for(int i =0;i<n_player;i++)
+		if (states[i] == alive && ((pl[i].x == 1) || (pl[i].x == 2 && taggerY - 1 <= pl[i].y && pl[i].y <= taggerY + 1)))
 		{
-			fStates[i] = states[i];
-			gotoxy(15 + i, 0);
-			printf("player %d: ", i);
-			if (states[i] == alive)
-				printf("alive\n");
-			else if (states[i] == dead)
-				printf("dead!\n");
-			else
-				printf("finished\n");
+			back_buf[pl[i].y][pl[i].x] = ' ';
+			states[i] = finished;
 		}
-	}
 }
 void killPlayer()
 {
-	for (int i = 0; i < 9; i++)
-		for (int j = 0; j < 40; j++)
-			if (front[i][j] != map[i][j] && map[i][j] != '#' && map[i][j] != '@')
+	for (int i = 0; i < N_ROW; i++)
+		for (int j = 0; j < N_COL; j++)
+			if (front_buf[i][j] != back_buf[i][j] && back_buf[i][j] != '#' && back_buf[i][j] != '@')
 			{
-				states[map[i][j] - '0'] = dead;
-				for (int k = j - 1; 0 < k; k--)
+				if ('0' <= back_buf[i][j] && back_buf[i][j] <= '9')
 				{
-					if ('0' <= map[i][k] && map[i][k] <= '9')
-						states[map[i][j] - '0'] = alive;
+					// 위치가 바뀐 플레이어는 dead상태로 전환
+					states[back_buf[i][j] - '0'] = dead;
+
+					for (int k = j - 1; 1 < k; k--)
+					{
+						// 단, 앞에 사람이 있으면 alive상태로 다시 전환
+						if ('0' <= back_buf[i][k] && back_buf[i][k] <= '9')
+							states[back_buf[i][j] - '0'] = alive;
+					}
+					if (states[back_buf[i][j] - '0'] == dead)
+					{
+						player[back_buf[i][j] - '0'] = false;
+						back_buf[i][j] = ' ';
+						n_alive--;
+					}
 				}
-				if (states[map[i][j] - '0'] == dead)
-					map[i][j] = ' ';
 			}
-}
-void gotoxy(int row, int col) {
-	COORD pos = { col, row };
-	SetConsoleCursorPosition(
-		GetStdHandle(STD_OUTPUT_HANDLE),
-		pos
-	);
-}
-void draw(void) {
-	for (int i = 0; i < 9; i++) {
-		for (int j = 0; j < 40; j++) {
-			if (front[i][j] != map[i][j]) {
-				front[i][j] = map[i][j];
-				gotoxy(i, j);
-				printf("%c", front[i][j]);
-			}
-		}
-	}
 }
