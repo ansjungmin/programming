@@ -33,8 +33,9 @@ bool running = true;	// 게임 반복문 실행 여부
 point* pl;				// 플레이어 위치들
 tickState* plTicks;		// 플레이어 이동 주기
 state* states;			// 플레이어 상태 (alive, dead, finished)
+state* fstates;			// 더블 체크
 int taggerY;			// 영희 세로 위치
-
+char str[] = { "0번 사망" };
 
 void mugunghwa() {
 	srand((unsigned int)time(NULL));
@@ -61,6 +62,7 @@ void mugunghwa() {
 	pl = (point*)malloc(sizeof(point) * n_player);
 	plTicks = (tickState*)malloc(sizeof(tickState) * n_player);
 	states = (state*)malloc(sizeof(state)*n_player);
+	fstates = (state*)malloc(sizeof(state) * n_player);
 	for (int i = 0; i < n_player; i++) 
 	{
 		// 플레이어들 위치 설정
@@ -84,7 +86,6 @@ void mugunghwa() {
 		states[i] = alive;
 	}
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 	// 게임 진행 루프문
 	while (running) {
@@ -124,7 +125,7 @@ void mugunghwa() {
 				plTicks[i].cntTick = 0;
 				if (isWatching == false || (rand() % 10 == 0))	// 영희가 바라보면 10의 1확률로 움직인다. 현재 10%
 				{
-					int random = rand() % 10;	
+					int random = rand() % 10;
 					if (random == 0)
 						moveOn(pl + i, IDLE);
 					else if (random == 1)
@@ -140,7 +141,7 @@ void mugunghwa() {
 
 
 		}
-	
+
 
 		// 영희 말하기&뒤돌아보기 구현
 		if (isWatching)
@@ -183,7 +184,14 @@ void mugunghwa() {
 			}
 
 		}
-
+		for (int i = 0; i < n_player; i++) {
+			if (fstates[i] != states[i] && states[i] == dead) {
+				str[0] = i + '0';
+				dialog(str);
+				fstates[i] = states[i];
+			}
+		}
+	
 		// 플레이어 도착 여부 확인
 		checkFinished();
 
