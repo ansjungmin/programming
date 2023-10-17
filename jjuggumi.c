@@ -1,4 +1,4 @@
-// 2023-2 °í±ŞÇÁ·Î±×·¡¹Ö °úÁ¦: ÂŞ²Ù¹Ì °ÔÀÓ
+// 2023-2 ê³ ê¸‰í”„ë¡œê·¸ë˜ë° ê³¼ì œ: ì­ˆê¾¸ë¯¸ ê²Œì„
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -11,7 +11,7 @@
 
 int jjuggumi_init(void);
 
-// low ÀÌ»ó high ÀÌÇÏ ³­¼ö¸¦ ¹ß»ı½ÃÅ°´Â ÇÔ¼ö
+// low ì´ìƒ high ì´í•˜ ë‚œìˆ˜ë¥¼ ë°œìƒì‹œí‚¤ëŠ” í•¨ìˆ˜
 int randint(int low, int high) {
 	int rnum = rand() % (high - low + 1) + low;
 	return rnum;
@@ -20,7 +20,7 @@ int randint(int low, int high) {
 int jjuggumi_init(void) {
 	srand((unsigned int)time(NULL));
 
-	printf("ÇÃ·¹ÀÌ¾î ¼ö: ");
+	printf("í”Œë ˆì´ì–´ ìˆ˜: ");
 	scanf_s("%d", &n_player);
 
 	n_alive = n_player;
@@ -30,46 +30,53 @@ int jjuggumi_init(void) {
 	return 0;
 }
 int intro() {
-	printf("  .£¯  ¡Ò   ¡¬ \n");
-	printf("  £¯¡¡¡¡  ¡¡¡¬		ÂŞ \n");
-	printf("  /         |¡¬		²Ù \n");
-	printf(" (/         | )		¹Ì \n");
-	printf(" /          |¤Ó		°Ô \n");
-	printf(" f¡¡¡¡¡¡¡¡   ¤Ó		ÀÓ \n");
-	printf(" | ¡Ü¡¡¡¡¡Ü    £ü \n");
-	printf(" |    ¡ä   ¡¡ £ü \n");
-	printf(" ¤¤£ß £ß  ¡¡«Î \n");
-	printf(" JïËïËïËïË£şl¡¬   \n");
-	printf("ª¯(_(_(£ßL£ß)«Î  \n");
+	printf("  .ï¼  âŒ’   ï¼¼ \n");
+	printf("  ï¼ã€€ã€€  ã€€ï¼¼		ì­ˆ \n");
+	printf("  /         |ï¼¼		ê¾¸ \n");
+	printf(" (/         | )		ë¯¸ \n");
+	printf(" /          |ã…£		ê²Œ \n");
+	printf(" fã€€ã€€ã€€ã€€   ã…£		ì„ \n");
+	printf(" | â—ã€€ã€€â—    ï½œ \n");
+	printf(" |    â–½   ã€€ ï½œ \n");
+	printf(" ã„´ï¼¿ ï¼¿  ã€€ãƒ \n");
+	printf(" Jä¸ä¸ä¸ä¸ï¿£lï¼¼   \n");
+	printf("ã(_(_(ï¼¿Lï¼¿)ãƒ  \n");
 
 
 	Sleep(5000);
 }
 
 int ending() {
-	if (n_player == 1) {
 		printf("         *the end*\n");
 		printf("         *the end*\n");
 		printf("         *the end*\n");
 		printf("         *the end*\n");
-		printf("	    ¤µ_¤µ  \n");
-		printf("	    ('¥ø')\n");
-		printf("	£¯ £Õ ¡ï £Õ¡¬\n");
-		printf("	¦¢£ª¡¡Ãà¡¡£ª¦¢\n");
-		printf("	¦¢£ª¡¡ÇÏ¡¡£ª¦¢\n");
-		printf("	¦¢£ª¡¡ÇØ¡¡£ª¦¢\n");
-		printf("	¦¢£ª¡¡¿ä¡¡£ª¦¢\n");
-		printf("	¦¢£ª¡¡¡Ù¡¡£ª ¦¢\n");
-		printf("	£ş£ş£ş£ş£ş£ş \n");
-
+		printf("	    ã……_ã……  \n");
+		printf("	    ('Ï‰')\n");
+		printf("	ï¼ ï¼µ âˆ½ ï¼µï¼¼\n");
+		printf("	â”‚ï¼Šã€€ê²Œã€€ï¼Šâ”‚\n");
+		printf("	â”‚ï¼Šã€€ì„ã€€ï¼Šâ”‚\n");
+		printf("	â”‚ï¼Šã€€ì¢…ã€€ï¼Šâ”‚\n");
+		printf("	â”‚ï¼Šã€€ë£Œã€€ï¼Šâ”‚\n");
+		printf("	â”‚ï¼Šã€€â˜†ã€€ï¼Š â”‚\n");
+		printf("	ï¿£ï¿£ï¿£ï¿£ï¿£ï¿£ \n");
+		if (n_alive == 1) {
+			// ìš°ìŠ¹ì ì¶œë ¥
+			printf(" ìš°ìŠ¹ì: ");
+			for (int i = 0; i < n_player; i++) {
+				if (player[i]) {
+					printf("í”Œë ˆì´ì–´ %d", i);
+					break;
+				}
+			}
 	}
 }
 
 int main(void) {
 	jjuggumi_init();
 	intro();
-	sample();
-	//mugunghwa();
+	//sample();
+	mugunghwa();
 	//nightgame();
 	//juldarigi();
 	//jebi();
