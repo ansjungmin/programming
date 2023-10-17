@@ -87,7 +87,7 @@ void dialog(char message[]) {
 	original_sec = DIALOG_DURATION_SEC;
 
 	int start_row = N_ROW / 2;
-	int start_col = (N_COL / 2) - (strlen(message) / 2);
+	int start_col = (N_COL / 2) - (strlen(message) / 8);
 
 	Sleep(1000);
 
