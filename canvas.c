@@ -10,6 +10,7 @@
 
 void draw(void);
 void print_status(void);
+void update_stamina(void);
 
 // (zero-base) row행, col열로 커서 이동
 void gotoxy(int row, int col) {
@@ -71,12 +72,44 @@ void draw(void) {
 	}
 }
 
-void print_status(void) {
-	printf("no. of players left: %d\n", n_alive);
+
+
+void update_stamina(void) {
 	for (int p = 0; p < n_player; p++) {
-		printf("player %2d: %5s\n", p, player[p] ? "alive" : "DEAD");
+		if (player[p].is_alive) {
+			// 게임을 한 번 마칠 때마다 일정량 회복 (40%)
+			player[p].stamina += 40;
+
+			// 스태미나가 100%를 넘지 않도록 제한
+			if (player[p].stamina > 100) {
+				player[p].stamina = 100;
+			}
+
+		}
 	}
 }
+
+
+void print_status(void) {
+	update_stamina();
+	printf("no. of players left: %d\n", n_alive);
+	printf("\t\tintl\tstr\tstm\n");
+
+	for (int p = 0; p < n_player; p++) {
+		// Calculate effective intelligence and strength
+		float effective_intel = player[p].intel * (float)player[p].item.stamina_buf / 100.0;
+		float effective_str = player[p].str * (float)player[p].item.stamina_buf / 100.0;
+
+		// Print player status with buffs
+		printf("player %d: %s %.1f(+%d)\t%.1f(+%d)\t%d%%\n",
+			p,
+			player[p].is_alive ? "alive" : "DEAD",
+			effective_intel, player[p].item.intel_buf,
+			effective_str, player[p].item.str_buf,
+			player[p].stamina);
+	}
+}
+
 
 void dialog(char message[]) {
 	// 현재 화면 저장
